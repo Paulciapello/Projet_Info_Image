@@ -25,24 +25,33 @@ def create_Ray(O, D):
     return ray
 
 def create_sphere(P, r, i):
-    sphere={'centre':np.array(P),
+    sphere={'type':'sphere',
+            'centre':np.array(P),
             'rayon':np.array(r),
-            'index_sphere':i}
+            'index_sphere':int(i)}
     return sphere
 
 def create_plane(P, n, i):
     plane={'position':np.array(P),
             'vect_n':np.array(r),
-            'index_plane':i}
+            'index_plane':int(i)}
 
 def normalize(x):
-    
+    return x/np.linalg.norm(x)
 
 def rayAt(ray,t):
-    # Remplissez ici 
+    O = ray['origin']
+    D = ray['direction']
+    return O + t*D
 
 def intersect_Plane(ray, plane):
-    # Remplissez ici 
+        P = plane['position']
+        n = plane['vect_n']
+        if abs( np.dot(D,n))<1e-6:
+            return np.inf
+        t = -np.dot((O-P,r))/np.dot(D,n)
+    
+    return   
 
 def intersect_Sphere(ray, sphere):
     # Remplissez ici 
