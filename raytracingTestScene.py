@@ -3,23 +3,26 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def create_Ray(O, D):
-    ray = {'origin': np.array(O),
+def create_Ray(C, D):
+    ray = {'origin': np.array(C),
            'direction': np.array(D)}
     return ray
 
 
-def create_sphere(P, r, i):
-    sphere = {'type': 'sphere',
+def create_sphere(P, r, amb, i):
+    sphere = {'type':'sphere',
               'centre': np.array(P),
               'rayon': np.array(r),
+              'ambient' : np.array(amb),
               'index_sphere': int(i)}
     return sphere
 
 
-def create_plane(P, n, i):
-    plane = {'position': np.array(P),
+def create_plane(P, n, amb, i):
+    plane = {'type' : 'plane',
+             'position': np.array(P),
              'vect_n': np.array(n),
+             'ambient' : np.array(amb),
              'index_plane': int(i)}
     return plane
 
@@ -29,29 +32,29 @@ def normalize(x):
 
 
 def rayAt(ray, t):
-    O = ray['origin']
+    C = ray['origin']
     D = ray['direction']
-    return O + t * D
+    return C + t * D
 
 
 def get_Normal(obj, M):
     # Remplissez ici 
     if obj['type'] == 'sphere':
-        N = normalize(M-obj['position'])
+        N = normalize(M-obj['centre'])
     elif obj['type'] == 'plane':
-        N = obj['normal']
+        N = obj['vect_n']
     return N
     
 
 def intersect_Plane(ray, plane):
     P = plane['position']
     n = plane['vect_n']
-    O = ray['origin']
+    C = ray['origin']
     D = ray['direction']
     if abs(np.dot(P, n)) < 1e-6:
         return np.inf
     else:
-        t = np.dot((P - O), n) / np.dot(D, n)
+        t = np.dot((P - C), n) / np.dot(D, n)
         if t > 0:
             return t
         else:
@@ -59,19 +62,19 @@ def intersect_Plane(ray, plane):
 
 
 def intersect_Sphere(ray, sphere):
-    O = ray['origin']
+    C = ray['origin']
     D = ray['direction']
     P = sphere['centre']
     r = sphere['rayon']
 
     a = np.dot(D, D)
-    b = -2 * np.dot(D, (P - O))
-    c = np.dot((P - O), (P - O)) - r**2
+    b = -2 * np.dot(D, (P - C))
+    c = np.dot((P - C), (P - C)) - r**2
 
     delta = b**2 - 4 * a * c
     if delta >= 0:
-        t1 = (-b - math.sqrt(delta)) / (2 * a)
-        t2 = (-b + math.sqrt(delta)) / (2 * a)
+        t1 = (-b - np.sqrt(delta)) / (2 * a)
+        t2 = (-b + np.sqrt(delta)) / (2 * a)
         if t1 >= 0 and t2 >= 0:
             return min(t1, t2)
         else:
@@ -84,7 +87,7 @@ def intersect_Scene(ray, obj):
     if obj['type'] == 'plane':
         return intersect_Plane(ray,obj)
     elif obj['type'] == 'sphere':
-        return intersect_Sphere(ray, sphere)
+        return intersect_Sphere(ray, obj)
     
     
 
@@ -106,8 +109,19 @@ def compute_reflection(rayTest,depth_max,col):
     return col 
 
 def trace_ray(ray):
+    tmin = np.inf
+    objmin = None
+    for obj in scene :
+        tobj=intersect_Scene(ray, obj)
+        if tobj<tmin:
+            tmin, objmin =tobj, obj
+    if objmin==None:
+        return None
+    P = rayAt(ray,tmin)
+    N = get_Normal(objmin,P)
+    col = objmin['ambient']
     # Remplissez ici 
-    return 
+    return objmin, P, N, col
 
 
 # Taille de l'image
@@ -144,14 +158,14 @@ depth_max = 10
 
 scene = [create_sphere([.75, -.3, -1.], # Position
                          .6, # Rayon
-                         #np.array([1. , 0.6, 0. ]), # ambiant
+                         np.array([1. , 0.6, 0. ]), # ambiant
                          #np.array([1. , 0.6, 0. ]), # diffuse
                          #np.array([1, 1, 1]), # specular
                          #0.2, # reflection index
                          1), # index
           create_plane([0., -.9, 0.], # Position
                          [0, 1, 0], # Normal
-                         #np.array([0.145, 0.584, 0.854]), # ambiant
+                         np.array([0.145, 0.584, 0.854]), # ambiant
                          #np.array([0.145, 0.584, 0.854]), # diffuse
                          #np.array([1, 1, 1]), # specular
                          #0.7, # reflection index
@@ -163,7 +177,14 @@ for i, x in enumerate(np.linspace(S[0], S[2], w)):
     if i % 10 == 0:
         print(i / float(w) * 100, "%")
     for j, y in enumerate(np.linspace(S[1], S[3], h)):
-        #Remplisssez votre code ici
+        col = np.zeros((3))
+        Q[:2] = (x,y)
+        D = normalize(Q-C)
+        rayTest = create_Ray(C, D)
+        traced = trace_ray(rayTest)
+        if traced :
+            obj, M, N, col_ray = traced
+            col += col_ray
         img[h - j - 1, i, :] = np.clip(col, 0, 1) # la fonction clip permet de "forcer" col a être dans [0,1]
 
 plt.imsave('figRaytracing.png', img)
