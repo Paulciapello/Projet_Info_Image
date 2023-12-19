@@ -92,12 +92,33 @@ def intersect_Scene(ray, obj):
     
 
 def Is_in_Shadow(obj_min,P,N):
-    # Remplissez ici 
-    return 
+    # Ombre : on détermine si l'objet est ou non dans l'ombre.
+    # Pour cela, on construit une liste contenant toutes les intersections atres que la précedente
+    # dictionnaire obj_min ets l'objet initialement intersecté.
+    # numpy.array P est un point d'intersection du rayon initial avec le premier objet intersecté obj
+    # numpy.array N en obj au point P
+    PL = normalize(L-P)
+    rayTest = create_Ray(P+acne_eps*N,PL)
+    I_intersect = []
+    for obj in scene :
+        if obj['index'] != obj_min['index']:
+            t_obj = intersect_Scene(rayTest, obj)
+            if t_obj != np.inf:
+                I_intersect.append(t_obj)
+    if I_intersect : #si la liste N'est pas vide, la couleur sur l'objet est noire
+        return True
+    return False
 
 
 def eclairage(obj,light,P) : 
-    # Remplissez ici 
+    PL = normalize(L-P)
+    PC = normalize(C-P)
+    #on calcule la couleur suivant les modèles utilisé
+    col = obj['ambient']*light['ambient']
+    #Lambert shading (diffuse).
+    col += obj['diffuse']*light['diffuse']*max(np.dot(N,PL),0)
+    #Blinn-Phong shading (specular).
+    col += obj['specular']*light['specular']*max(np.dot(N,normalize(PL+PC)),0)**(materialShininess)
     return 
 
 def reflected_ray(dirRay,N):
