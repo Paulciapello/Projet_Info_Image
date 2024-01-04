@@ -3,81 +3,78 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def create_Ray(C, D):
-    ray = {'origin': np.array(C),
+def create_Ray(O, D):
+    ray = {'origin': np.array(O),
            'direction': np.array(D)}
     return ray
 
 
-def create_sphere(P, r, amb, dif, sp, i):
+def create_sphere(C, r, amb, dif, sp, ref, i):
     sphere = {'type':'sphere',                                                                  
-              'centre': np.array(P),
+              'centre': np.array(C),
               'rayon': np.array(r),
               'diffuse': np.array(dif),
               'ambient' : np.array(amb),
-              'index_sphere': int(i),
-              'specular': np.array(sp)}
+              'specular': np.array(sp),
+              'reflection': ref,
+              'index' : int(i)}
     return sphere
 
-def create_plane(P, n, amb, dif, sp, i):
+def create_plane(P, n, amb, dif, sp,ref, i):
     plane = {'type' : 'plane',
              'position': np.array(P),
              'vect_n': np.array(n),
              'diffuse': np.array(dif),
              'ambient' : np.array(amb),
-             'index_plane': int(i),
-             'specular': np.array(sp)}
+             'specular': np.array(sp),
+             'reflection': ref,
+             'index' : int(i)}
     return plane
 
 
 def normalize(x):
-    return x / np.linalg.norm(x)
+    return x/np.linalg.norm(x)
 
 
 def rayAt(ray, t):
-    C = ray['origin']
-    D = ray['direction']
-    return C + t * D
+    return ray['origin']+t*ray['direction']
 
 
 def get_Normal(obj, M):
-    # Remplissez ici 
     if obj['type'] == 'sphere':
-        N = normalize(M-obj['centre'])
+        Vect = normalize(M-obj['centre'])
     elif obj['type'] == 'plane':
-        N = obj['vect_n']
-    return N
+        Vect = obj['vect_n']
+    return Vect
     
 
 def intersect_Plane(ray, plane):
     P = plane['position']
     n = plane['vect_n']
-    C = ray['origin']
-    D = ray['direction']
-    if abs(np.dot(P, n)) < 1e-6:
+    O = ray['origin']
+    d = ray['direction']
+    if abs(np.dot(d, n)) < 1e-6:
         return np.inf
-    else:
-        t = np.dot((P - C), n) / np.dot(D, n)
-        if t > 0:
-            return t
-        else:
-            return np.inf
+    t = -np.dot((O-P),n)/np.dot(d, n)
+    if t>0:
+        return t
+    return np.inf
 
 
 def intersect_Sphere(ray, sphere):
-    C = ray['origin']
-    D = ray['direction']
-    P = sphere['centre']
+    O = ray['origin']
+    d = ray['direction']
+    C = sphere['centre']
     r = sphere['rayon']
 
-    a = np.dot(D, D)
-    b = -2 * np.dot(D, (P - C))
-    c = np.dot((P - C), (P - C)) - r**2
+    a = np.dot(d, d)
+    b = -2 * np.dot(d, (C-O))
+    c = np.dot((C-O),(C-O)) - r**2
 
-    delta = b**2 - 4 * a * c
+    delta = b**2 - 4*a*c
     if delta >= 0:
-        t1 = (-b - np.sqrt(delta)) / (2 * a)
-        t2 = (-b + np.sqrt(delta)) / (2 * a)
+        t1 = (-b-np.sqrt(delta))/(2*a)
+        t2 = (-b+np.sqrt(delta))/(2*a)
         if t1 >= 0 and t2 >= 0:
             return min(t1, t2)
         else:
@@ -88,18 +85,13 @@ def intersect_Sphere(ray, sphere):
     
 def intersect_Scene(ray, obj):
     if obj['type'] == 'plane':
-        return intersect_Plane(ray,obj)
+        return intersect_Plane(ray, obj)
     elif obj['type'] == 'sphere':
         return intersect_Sphere(ray, obj)
     
     
 
 def Is_in_Shadow(obj_min,P,N):
-    # Ombre : on détermine si l'objet est ou non dans l'ombre.
-    # Pour cela, on construit une liste contenant toutes les intersections atres que la précedente
-    # dictionnaire obj_min ets l'objet initialement intersecté.
-    # numpy.array P est un point d'intersection du rayon initial avec le premier objet intersecté obj
-    # numpy.array N en obj au point P
     PL = normalize(L-P)
     rayTest = create_Ray(P+acne_eps*N,PL)
     I_intersect = []
@@ -108,7 +100,7 @@ def Is_in_Shadow(obj_min,P,N):
             t_obj = intersect_Scene(rayTest, obj)
             if t_obj != np.inf:
                 I_intersect.append(t_obj)
-    if I_intersect : #si la liste N'est pas vide, la couleur sur l'objet est noire
+    if I_intersect : 
         return True
     return False
 
@@ -118,37 +110,47 @@ def eclairage(obj,Light,P):
     PL = normalize(L-P)
     PC = normalize(C-P)
 #on calcule la couleur suivant les modèles utilisé
-    col = obj['ambient']*Light['ambient']
+    ct = obj['ambient']*Light['ambient']
 #Lambert shading (diffuse).
-    col += obj['diffuse']*Light['diffuse']*max(np.dot(N,PL),0)
+    ct += obj['diffuse']*Light['diffuse']*max(np.dot(N,PL),0)
 #Blinn-Phong shading (specular).
-    col += obj['specular']*Light['specular']*max(np.dot(N,normalize(PL+PC)),0)**(materialShininess)
-    return col
+    ct += obj['specular']*Light['specular']*max(np.dot(N,normalize(PL+PC)),0)**(materialShininess)
+    return ct
    
 
 def reflected_ray(dirRay,N):
-    # Remplissez ici 
-    return
+   return dirRay - 2*np.dot(dirRay,N)*N
 
-def compute_reflection(rayTest,depth_max,col_ray):
-    # Remplissez ici 
-    return col 
+def compute_reflection(rayTest,depth_max,col):
+    d = rayTest['direction']
+    c = 1
+    for k in range(1,depth_max):
+        traced = trace_ray(rayTest)      #### A MODIFIER
+        if traced==None:
+            break
+        obj, M, N, col_ray = traced
+        col = col + c*col_ray
+        d = reflected_ray(rayTest['direction'],N)
+        rayTest = create_Ray(M+acne_eps*N, d)
+        c = c*obj['reflection']
+    return col
 
 def trace_ray(ray):
-    tmin = np.inf
-    objmin = None
+    t_min = np.inf
+    obj_min = None
     for obj in scene :
-        tobj=intersect_Scene(ray, obj)
-        if tobj<tmin:
-            tmin, objmin =tobj, obj
-    if objmin==None:
+        t_obj=intersect_Scene(ray, obj)
+        if t_obj<t_min:
+            t_min, obj_min =t_obj, obj
+    if obj_min==None:
         return None
-    else:
-        P = rayAt(ray,tmin)
-        N = get_Normal(objmin,P)
-        col_ray = eclairage(obj,Light,P) 
-    # Remplissez ici 
-    return objmin, P, N, col_ray
+    P = rayAt(ray,t_min)
+    N = get_Normal(obj_min,P)
+    shadow = Is_in_Shadow(obj_min,P,N)
+    if shadow:
+        return None    
+    col_ray = eclairage(obj_min, Light, P)
+    return obj_min, P, N, col_ray
 
 
 
@@ -191,14 +193,14 @@ scene = [create_sphere([.75, -.3, -1.], # Position
                          np.array([1. , 0.6, 0. ]), # ambiant
                          np.array([1. , 0.6, 0. ]), # diffuse
                          np.array([1, 1, 1]), # specular
-                         #0.2, # reflection index
+                         0.2, # reflection index
                          1), # index
           create_plane([0., -.9, 0.], # Position
                          [0, 1, 0], # Normal
                          np.array([0.145, 0.584, 0.854]), # ambiant
                          np.array([0.145, 0.584, 0.854]), # diffuse
                          np.array([1, 1, 1]), # specular
-                         #0.7, # reflection index
+                         0.7, # reflection index
                          2), # index
          ]
 
@@ -214,7 +216,7 @@ for i, x in enumerate(np.linspace(S[0], S[2], w)):
         traced = trace_ray(rayTest)
         if traced :
             obj, M, N, col_ray = traced
-            col += col_ray
+            col = compute_reflection(rayTest,depth_max,col)
         img[h - j - 1, i, :] = np.clip(col, 0, 1) # la fonction clip permet de "forcer" col a être dans [0,1]
 
 plt.imsave('figRaytracing.png', img)
