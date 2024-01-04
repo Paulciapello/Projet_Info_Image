@@ -9,21 +9,24 @@ def create_Ray(C, D):
     return ray
 
 
-def create_sphere(P, r, amb, i):
-    sphere = {'type':'sphere',
+def create_sphere(P, r, amb, dif, sp, i):
+    sphere = {'type':'sphere',                                                                  
               'centre': np.array(P),
               'rayon': np.array(r),
+              'diffuse': np.array(dif),
               'ambient' : np.array(amb),
-              'index_sphere': int(i)}
+              'index_sphere': int(i),
+              'specular': np.array(sp)}
     return sphere
 
-
-def create_plane(P, n, amb, i):
+def create_plane(P, n, amb, dif, sp, i):
     plane = {'type' : 'plane',
              'position': np.array(P),
              'vect_n': np.array(n),
+             'diffuse': np.array(dif),
              'ambient' : np.array(amb),
-             'index_plane': int(i)}
+             'index_plane': int(i),
+             'specular': np.array(sp)}
     return plane
 
 
@@ -110,22 +113,24 @@ def Is_in_Shadow(obj_min,P,N):
     return False
 
 
-def eclairage(obj,light,P) : 
+def eclairage(obj,Light,P): 
+    N = get_Normal(obj, P)
     PL = normalize(L-P)
     PC = normalize(C-P)
-    #on calcule la couleur suivant les modèles utilisé
-    col = obj['ambient']*light['ambient']
-    #Lambert shading (diffuse).
-    col += obj['diffuse']*light['diffuse']*max(np.dot(N,PL),0)
-    #Blinn-Phong shading (specular).
-    col += obj['specular']*light['specular']*max(np.dot(N,normalize(PL+PC)),0)**(materialShininess)
-    return 
+#on calcule la couleur suivant les modèles utilisé
+    col = obj['ambient']*Light['ambient']
+#Lambert shading (diffuse).
+    col += obj['diffuse']*Light['diffuse']*max(np.dot(N,PL),0)
+#Blinn-Phong shading (specular).
+    col += obj['specular']*Light['specular']*max(np.dot(N,normalize(PL+PC)),0)**(materialShininess)
+    return col
+   
 
 def reflected_ray(dirRay,N):
     # Remplissez ici 
     return
 
-def compute_reflection(rayTest,depth_max,col):
+def compute_reflection(rayTest,depth_max,col_ray):
     # Remplissez ici 
     return col 
 
@@ -138,11 +143,15 @@ def trace_ray(ray):
             tmin, objmin =tobj, obj
     if objmin==None:
         return None
-    P = rayAt(ray,tmin)
-    N = get_Normal(objmin,P)
-    col = objmin['ambient']
+    else:
+        P = rayAt(ray,tmin)
+        N = get_Normal(objmin,P)
+        col_ray = eclairage(obj,Light,P) 
     # Remplissez ici 
-    return objmin, P, N, col
+    return objmin, P, N, col_ray
+
+
+
 
 
 # Taille de l'image
@@ -180,15 +189,15 @@ depth_max = 10
 scene = [create_sphere([.75, -.3, -1.], # Position
                          .6, # Rayon
                          np.array([1. , 0.6, 0. ]), # ambiant
-                         #np.array([1. , 0.6, 0. ]), # diffuse
-                         #np.array([1, 1, 1]), # specular
+                         np.array([1. , 0.6, 0. ]), # diffuse
+                         np.array([1, 1, 1]), # specular
                          #0.2, # reflection index
                          1), # index
           create_plane([0., -.9, 0.], # Position
                          [0, 1, 0], # Normal
                          np.array([0.145, 0.584, 0.854]), # ambiant
-                         #np.array([0.145, 0.584, 0.854]), # diffuse
-                         #np.array([1, 1, 1]), # specular
+                         np.array([0.145, 0.584, 0.854]), # diffuse
+                         np.array([1, 1, 1]), # specular
                          #0.7, # reflection index
                          2), # index
          ]
