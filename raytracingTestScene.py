@@ -31,6 +31,17 @@ def create_plane(P, n, amb, dif, sp,ref, i):
              'index' : int(i)}
     return plane
 
+def create_cylinder(C, r, z, amb, dif, sp, ref, i):
+    cylinder = {'type':'cylinder',
+                'centre':np.array(C),
+                'rayon': np.array(r),
+                'height': np.array(z),
+                'diffuse': np.array(dif),
+                'ambient' : np.array(amb),
+                'specular': np.array(sp),
+                'reflection': ref,
+                'index' : int(i)}
+    return cylinder
 
 def normalize(x):
     return x/np.linalg.norm(x)
@@ -42,9 +53,14 @@ def rayAt(ray, t):
 
 def get_Normal(obj, M):
     if obj['type'] == 'sphere':
-        Vect = normalize(M-obj['centre'])
+        Vect =normalize(M-obj['centre'])
     elif obj['type'] == 'plane':
         Vect = obj['vect_n']
+    elif obj['type'] == 'cylinder':
+        H = obj['centre']
+        
+        Vect = normalize(M[0]-H[0],M[1]-H[1],0)
+        
     return Vect
     
 
@@ -59,7 +75,6 @@ def intersect_Plane(ray, plane):
     if t>0:
         return t
     return np.inf
-
 
 def intersect_Sphere(ray, sphere):
     O = ray['origin']
@@ -82,12 +97,48 @@ def intersect_Sphere(ray, sphere):
     else:
         return np.inf
 
+def intersect_Cylinder(ray, cylinder):
+    O = ray['origin']
+    d = ray['direction']
+    C = cylinder['centre']
+    R = cylinder['rayon']
+    z = 10
+    
+    x1 = O[0]
+    y1 = O[1]       #récupere les (x1,y1,z1) de O
+    #O_z = O[2]
+    
+    a = d[0]
+    b = d[1]       #récupere les (a,b,c) du vecteur direction
+    #c = d[2]
+    
+    x0 = C[0]
+    y0 = C[1]       #récupere les(xo,yo,zo) de C
+    z0 = C[2]
+    
+    A = a**2 + b**2
+    B = 2 * (x1 * a - x0 * a - y1 * b + y0 * b)
+    C = x1**2 - 2 * x1 * x0 + x0**2 + y1**2 - 2 * y1 * y0 + y0**2 - R**2 + (z - z0)**2
+    
+    delta = B**2 - 4 * A * C
+    
+    if delta >= 0:
+        t_1 = (-B-np.sqrt(delta))/(2*A)
+        t_2 = (-B+np.sqrt(delta))/(2*A)
+        if t_1 >= 0 and t_2 >= 0:
+            return min(t_1, t_2)
+        else:
+            return np.inf
+    else:
+        return np.inf
     
 def intersect_Scene(ray, obj):
     if obj['type'] == 'plane':
         return intersect_Plane(ray, obj)
     elif obj['type'] == 'sphere':
         return intersect_Sphere(ray, obj)
+    elif obj['type'] == 'cylinder':
+        return intersect_Cylinder(ray, obj)
     
     
 
@@ -188,35 +239,48 @@ skyColor = np.array([0.321, 0.752, 0.850])
 whiteColor = np.array([1,1,1])
 depth_max = 10
 
-scene = [create_sphere([.75, -.3, -1.], # Position
-                         .6, # Rayon
-                         np.array([1. , 0.6, 0. ]), # ambiant
-                         np.array([1. , 0.6, 0. ]), # diffuse
-                         np.array([1, 1, 1]), # specular
-                         0.2, # reflection index
-                         1), # index
-          create_plane([0., -.9, 0.], # Position
-                         [0, 1, 0], # Normal
-                         np.array([0.145, 0.584, 0.854]), # ambiant
-                         np.array([0.145, 0.584, 0.854]), # diffuse
-                         np.array([1, 1, 1]), # specular
-                         0.7, # reflection index
-                         2), # index
-         ]
-
-# Loop through all pixels.
-for i, x in enumerate(np.linspace(S[0], S[2], w)):
-    if i % 10 == 0:
-        print(i / float(w) * 100, "%")
-    for j, y in enumerate(np.linspace(S[1], S[3], h)):
-        col = np.zeros((3))
-        Q[:2] = (x,y)
-        D = normalize(Q-C)
-        rayTest = create_Ray(C, D)
-        traced = trace_ray(rayTest)
-        if traced :
-            obj, M, N, col_ray = traced
-            col = compute_reflection(rayTest,depth_max,col)
-        img[h - j - 1, i, :] = np.clip(col, 0, 1) # la fonction clip permet de "forcer" col a être dans [0,1]
-
-plt.imsave('figRaytracing.png', img)
+for u in range(0,1000):
+    
+    a = -1.2
+    b = -1.6
+    c = 0.1
+    x = u/40 - 1.5
+    z = -u/40
+    y = np.abs(np.exp(-c * z) * a * np.cos((2 * np.pi / b) * z))-0.3
+   
+    scene = [create_sphere([x, y, z], # Position
+                             .6, # Rayon
+                             np.array([1. , 0.6, 0. ]), # ambiant
+                             np.array([1. , 0.6, 0. ]), # diffuse
+                             np.array([1, 1, 1]), # specular
+                             0.2, # reflection index
+                             1), # index
+              create_plane([0., -.9, 0.], # Position
+                             [0, 1, 0], # Normal
+                             np.array([0.145, 0.584, 0.854]), # ambiant
+                             np.array([0.145, 0.584, 0.854]), # diffuse
+                             np.array([1, 1, 1]), # specular
+                             0.7, # reflection index
+                             2),# index
+              create_cylinder([.75, -.3, -1.], 10.,3., np.array([1. , 0.6, 0. ]),
+                              np.array([1. , 0.6, 0. ]), np.array([1, 1, 1]), 0.2, 3)
+             ]
+    
+    # Loop through all pixels.
+    for i, x in enumerate(np.linspace(S[0], S[2], w)):
+        if i % 10 == 0:
+            print(i / float(w) * 100, "%")
+        for j, y in enumerate(np.linspace(S[1], S[3], h)):
+            col = np.zeros((3))
+            Q[:2] = (x,y)
+            D = normalize(Q-C)
+            rayTest = create_Ray(C, D)
+            traced = trace_ray(rayTest)
+            if traced :
+                obj, M, N, col_ray = traced
+                col = compute_reflection(rayTest,depth_max,col)
+            img[h - j - 1, i, :] = np.clip(col, 0, 1) # la fonction clip permet de "forcer" col a être dans [0,1]
+    
+    plt.imsave('figRaytracing'+str(u)+'.png', img)
+    u = u + 1
+    
