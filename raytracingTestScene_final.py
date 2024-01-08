@@ -116,28 +116,35 @@ def intersect_sphere(ray, sphere):
 
 
 def intersect_cylinder(ray, cylinder):
-    """Calcul l'intersetion entre un rayon et un cylindre sinon renvoie un np.inf"""
     O = ray['origin']
     d = ray['direction']
     C = cylinder['centre']
     R = cylinder['rayon']
     z = 10
     
-    x1, y1, _ = O
-    a, b, _ = d                          # A changer 
-    x0, y0, z0 = C
+    x1 = O[0]
+    y1 = O[1]       #récupere les (x1,y1) de O
+    #O_z = O[2]
     
-    A = a**2 + b**2                                #coef de l'equation quadratique du cylindre à qui on a injecter l'équation de la droite rayon
-    B = 2 * (x1 * a - x0 * a - y1 * b + y0 * b)                                              
+    a = d[0]
+    b = d[1]       #récupere les (a,b) du vecteur direction
+    #c = d[2]
+    
+    x0 = C[0]
+    y0 = C[1]       #récupere les(xo,yo,zo) de C
+    z0 = C[2]
+    
+    A = a**2 + b**2                                       #Coef de l'equation quadratique du cylindre à qui on a injecter l'équation de la droite rayon
+    B = 2 * (x1 * a - x0 * a - y1 * b + y0 * b)                                            
     C = x1**2 - 2 * x1 * x0 + x0**2 + y1**2 - 2 * y1 * y0 + y0**2 - R**2 + (z - z0)**2
     
     delta = B**2 - 4 * A * C
     
     if delta >= 0:
-        t_1 = (-B - np.sqrt(delta)) / (2 * A)
-        t_2 = (-B + np.sqrt(delta)) / (2 * A)
+        t_1 = (-B-np.sqrt(delta))/(2*A)
+        t_2 = (-B+np.sqrt(delta))/(2*A)                                     #Calcul des points t1,t2 d'intersection
         if t_1 >= 0 and t_2 >= 0:
-            return min(t_1, t_2)                            # Retourne la valeur t1 utile 
+            return min(t_1, t_2)
         else:
             return np.inf
     else:
@@ -145,7 +152,7 @@ def intersect_cylinder(ray, cylinder):
 
 
 def intersect_scene(ray, obj):
-    """Renvoie les bonnes fonction suivant l'objet intersecté"""
+    """Renvoie les bonnes fonctions suivant l'objet intersecté"""
     if obj['type'] == 'plane':
         return intersect_plane(ray, obj)
     elif obj['type'] == 'sphere':
@@ -283,7 +290,7 @@ for u in range(0,1000):     # Calcul des 1000 images
                              np.array([1. , 0.6, 0. ]), # ambiant
                              np.array([1. , 0.6, 0. ]), # diffuse
                              np.array([1, 1, 1]), # specular
-                             0.2, # reflection index
+                             0.4, # reflection index
                              1), # index
               create_plane([0., -.9, 0.], # Position
                              [0, 1, 0], # Normal
