@@ -5,19 +5,19 @@ Created on Mon Jan  8 12:50:24 2024
 @author: chp4223a
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np                       
+import matplotlib.pyplot as plt          # Import des module python utile au projet
 
 
 def create_ray(O, D):
-    """Crée un dictionnaire rayon avec les clés suivantes"""
+    """Crée un dictionnaire rayon avec les clés suivantes:"""
     ray = {'origin': np.array(O),
            'direction': np.array(D)}
     return ray
 
 
 def create_sphere(C, r, amb, dif, sp, ref, i):
-    """Crée un dictionnaire sphere avec les clés suivantes"""
+    """Crée un dictionnaire sphere avec les clés suivantes:"""
     sphere = {'type': 'sphere',
               'centre': np.array(C),
               'rayon': np.array(r),
@@ -30,7 +30,7 @@ def create_sphere(C, r, amb, dif, sp, ref, i):
 
 
 def create_plane(P, n, amb, dif, sp, ref, i):
-    """Crée un dictionnaire plan avec les clés suivantes"""
+    """Crée un dictionnaire plan avec les clés suivantes:"""
     plane = {'type': 'plane',
              'position': np.array(P),
              'vect_n': np.array(n),
@@ -43,7 +43,7 @@ def create_plane(P, n, amb, dif, sp, ref, i):
 
 
 def create_cylinder(C, r, z, amb, dif, sp, ref, i):
-    """Crée un dictionnaire cylindre avec les clés suivantes"""
+    """Crée un dictionnaire cylindre avec les clés suivantes:"""
     cylinder = {'type': 'cylinder',
                 'centre': np.array(C),
                 'rayon': np.array(r),
@@ -57,29 +57,29 @@ def create_cylinder(C, r, z, amb, dif, sp, ref, i):
 
 
 def normalize(x):
-    """Normalise un vecteur """
+    """Normalise un vecteur"""
     return x / np.linalg.norm(x)
 
 
 def ray_at(ray, t):
-    """Calul les points du rayon suivant la variable t"""
+    """Calul les points de la droite "rayon" suivant la variable t"""
     return ray['origin'] + t * ray['direction']
 
 
 def get_normal(obj, M):
-    """Calculate the normal vector at a given point on an object."""
+    """Calcul la normal d'un vecteur a un point donné M sur un objet."""
     if obj['type'] == 'sphere':
-        Vect = normalize(M - obj['centre'])
+        Vect = normalize(M - obj['centre'])                                 # pour une sphere 
     elif obj['type'] == 'plane':
-        Vect = obj['vect_n']
+        Vect = obj['vect_n']                                                # pour un plan
     elif obj['type'] == 'cylinder':
         H = obj['centre']
-        Vect = normalize(np.array([M[0] - H[0], M[1] - H[1], 0]))
+        Vect = normalize(np.array([M[0] - H[0], M[1] - H[1], 0]))           # pour un cylindre 
     return Vect
 
 
 def intersect_plane(ray, plane):
-    """Compute the intersection between a ray and a plane."""
+    """Calcul l'intersetion entre un rayon et un plan sinon renvoie un np.inf"""
     P = plane['position']
     n = plane['vect_n']
     O = ray['origin']
@@ -93,20 +93,20 @@ def intersect_plane(ray, plane):
 
 
 def intersect_sphere(ray, sphere):
-    """Compute the intersection between a ray and a sphere."""
+    """Calcul l'intersetion entre un rayon et une sphere sinon renvoie un np.inf"""
     O = ray['origin']
     d = ray['direction']
     C = sphere['centre']
     r = sphere['rayon']
 
     a = np.dot(d, d)
-    b = -2 * np.dot(d, (C - O))
-    c = np.dot((C - O), (C - O)) - r**2
+    b = -2 * np.dot(d, (C - O))                   #Coef de l'equation quadratique du cercle à qui on a injecter l'équation de la droite rayon
+    c = np.dot((C - O), (C - O)) - r**2           #de la forme ax**2 + bx + c
 
     delta = b**2 - 4 * a * c
     if delta >= 0:
-        t1 = (-b - np.sqrt(delta)) / (2 * a)
-        t2 = (-b + np.sqrt(delta)) / (2 * a)
+        t1 = (-b - np.sqrt(delta)) / (2 * a)            #Calcul des points t1,t2 d'intersection
+        t2 = (-b + np.sqrt(delta)) / (2 * a)                    
         if t1 >= 0 and t2 >= 0:
             return min(t1, t2)
         else:
@@ -116,7 +116,7 @@ def intersect_sphere(ray, sphere):
 
 
 def intersect_cylinder(ray, cylinder):
-    """Compute the intersection between a ray and a cylinder."""
+    """Calcul l'intersetion entre un rayon et un cylindre sinon renvoie un np.inf"""
     O = ray['origin']
     d = ray['direction']
     C = cylinder['centre']
@@ -124,11 +124,11 @@ def intersect_cylinder(ray, cylinder):
     z = 10
     
     x1, y1, _ = O
-    a, b, _ = d
+    a, b, _ = d                          # A changer 
     x0, y0, z0 = C
     
-    A = a**2 + b**2
-    B = 2 * (x1 * a - x0 * a - y1 * b + y0 * b)
+    A = a**2 + b**2                                #coef de l'equation quadratique du cylindre à qui on a injecter l'équation de la droite rayon
+    B = 2 * (x1 * a - x0 * a - y1 * b + y0 * b)                                              
     C = x1**2 - 2 * x1 * x0 + x0**2 + y1**2 - 2 * y1 * y0 + y0**2 - R**2 + (z - z0)**2
     
     delta = B**2 - 4 * A * C
@@ -137,7 +137,7 @@ def intersect_cylinder(ray, cylinder):
         t_1 = (-B - np.sqrt(delta)) / (2 * A)
         t_2 = (-B + np.sqrt(delta)) / (2 * A)
         if t_1 >= 0 and t_2 >= 0:
-            return min(t_1, t_2)
+            return min(t_1, t_2)                            # Retourne la valeur t1 utile 
         else:
             return np.inf
     else:
@@ -145,7 +145,7 @@ def intersect_cylinder(ray, cylinder):
 
 
 def intersect_scene(ray, obj):
-    """Compute the intersection between a ray and an object in the scene."""
+    """Renvoie les bonnes fonction suivant l'objet intersecté"""
     if obj['type'] == 'plane':
         return intersect_plane(ray, obj)
     elif obj['type'] == 'sphere':
@@ -155,46 +155,46 @@ def intersect_scene(ray, obj):
 
 
 def is_in_shadow(obj_min, P, N):
-    """Check if a point is in shadow."""
-    PL = normalize(L - P)
-    ray_test = create_ray(P + acne_eps * N, PL)
-    I_intersect = []
+    """Verifie si les points intersecté sont dans l'ombre"""
+    PL = normalize(L - P)                          # Calcul la direction de la lumière 
+    ray_test = create_ray(P + acne_eps * N, PL)    # crée un rayon d'origine P + acne_eps * N dans la direction de la lumière        
+    I_intersect = []                       # Listera tous les points intersecté
 
     for obj in scene:
-        if obj['index'] != obj_min['index']:
+        if obj['index'] != obj_min['index']:            
             t_obj = intersect_scene(ray_test, obj)
             if t_obj != np.inf:
                 I_intersect.append(t_obj)
 
-    if I_intersect:
-        return True
+    if I_intersect:         
+        return True              
     return False
 
 
 def lighting(obj, Light, P):
-    """Compute the lighting at a given point on an object."""
+    """Calcul l'éclairage à un point donné sur un objet."""
     N = get_normal(obj, P)
-    PL = normalize(L - P)
+    PL = normalize(L - P)             
     PC = normalize(C - P)
 
-    # Calculate the color based on the used models
+    # Calcul la couleur en fonction des modèles utilisés
     ct = obj['ambient'] * Light['ambient']
 
-    # Lambert shading (diffuse)
+    # Illumination de Lambert (diffuse)
     ct += obj['diffuse'] * Light['diffuse'] * max(np.dot(N, PL), 0)
 
-    # Blinn-Phong shading (specular)
+    # Illumination de Blinn-Phong (specular)
     ct += obj['specular'] * Light['specular'] * max(np.dot(N, normalize(PL + PC)), 0)**materialShininess
     return ct
 
 
 def reflected_ray(dir_ray, N):
-    """Compute the reflected ray direction."""
+    """Calcul la direction du rayon réfléchi."""
     return dir_ray - 2 * np.dot(dir_ray, N) * N
 
 
 def compute_reflection(ray_test, depth_max, col):
-    """Compute reflection color."""
+    """Calcul la couleur de la réfelction"""
     d = ray_test['direction']
     c = 1
 
