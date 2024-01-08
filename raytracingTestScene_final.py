@@ -171,7 +171,7 @@ def is_in_shadow(obj_min, P, N):
     return False
 
 
-def lighting(obj, Light, P):
+def eclairage(obj, Light, P):
     """Calcul l'éclairage à un point donné sur un objet."""
     N = get_normal(obj, P)
     PL = normalize(L - P)             
@@ -214,7 +214,7 @@ def compute_reflection(ray_test, depth_max, col):
 
 
 def trace_ray(ray):
-    """Trace a ray through the scene."""
+    """Trace un rayon à travers la scene"""
     t_min = np.inf
     obj_min = None
 
@@ -233,7 +233,7 @@ def trace_ray(ray):
     if shadow:
         return None
 
-    col_ray = lighting(obj_min, Light, P)
+    col_ray = eclairage(obj_min, Light, P)
     return obj_min, P, N, col_ray
 
 
@@ -269,7 +269,7 @@ skyColor = np.array([0.321, 0.752, 0.850])
 whiteColor = np.array([1,1,1])
 depth_max = 10
 
-for u in range(0,1000):
+for u in range(0,1000):     # Calcul des 1000 images 
     
     a = -1.2
     b = -1.6
